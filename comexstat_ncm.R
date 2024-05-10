@@ -1,6 +1,6 @@
 # comexstat_ncm
 # creating loop for download files
-setwd("Z:/rstudio/comexstat/comexstat_ncm")
+setwd("D:/comexstat/estado")
 
 anos <- as.integer(lubridate::year(lubridate::today())-4):
   as.integer(lubridate::year(lubridate::today()))
@@ -42,7 +42,8 @@ comercio_exterior_ncm <-
   comercio_exterior_ncm |> 
   tidyr::unite(competencia, "CO_MES", "CO_ANO", sep = "-") |> 
   dplyr::mutate(competencia = stringr::str_c("01-", competencia)) |>
-  dplyr::mutate(competencia = lubridate::dmy(competencia))
+  dplyr::mutate(competencia = lubridate::dmy(competencia)) |>
+  dplyr::rename(SG_UF = SG_UF_NCM)
 
 # downloading and applying decoder 
 
@@ -101,6 +102,8 @@ for(l in seq_along(lista_tradutor)){
 
 # Unifying and selecting every decoded data into one file
 
+compilado_traduzido[[13]] <- NULL
+
 compilado_traduzido <-
   compilado_traduzido |> purrr::list_cbind()
 
@@ -113,12 +116,11 @@ comercio_exterior_ncm <- comercio_exterior_ncm |>
 
 nomes_semremocao <- comercio_exterior_ncm |> names()
 
-nomes_comremocao <- c("competencia", "CO_NCM", "CO_UNID", "CO_PAIS",
-                      "SG_UF_NCM", "CO_VIA", "CO_URF", "QT_ESTAT", "KG_LIQUIDO",
-                      "VL_FOB", "tipo_transacao", "NO_NCM_POR...14",
-                      "NO_SEC_POR", "NO_CUCI_SEC","NO_CGCE_N2", "NO_ISIC_GRUPO",
-                      "NO_UNID","SG_UNID", "NO_PAIS",
-                      "NO_BLOCO")
+nomes_comremocao <- c("competencia", "QT_ESTAT", "KG_LIQUIDO", "VL_FOB",
+                      "VL_FRETE", "tipo_transacao", "NO_NCM_POR...14",
+                      "NO_SH4_POR", "NO_ISIC_SECAO...33", "NO_CUCI_SEC",
+                      "SG_UNID", "NO_PAIS", "NO_VIA", "NO_URF", "NO_UF",
+                      "NO_REGIAO")
 
 comercio_exterior_ncm <- comercio_exterior_ncm |>
   dplyr::select(nomes_comremocao)
