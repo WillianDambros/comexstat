@@ -125,6 +125,16 @@ nomes_comremocao <- c("competencia", "QT_ESTAT", "KG_LIQUIDO", "VL_FOB",
 comercio_exterior_ncm <- comercio_exterior_ncm |>
   dplyr::select(nomes_comremocao)
 
+# creating a column with positive and negative numbers
+
+comercio_exterior_ncm <- comercio_exterior_ncm |>
+  dplyr::mutate(VL_FOB_BIVALENTE = dplyr::case_when(
+    tipo_transacao == "Exportação" ~ VL_FOB * 1,
+    tipo_transacao == "Importação" ~ VL_FOB * -1
+    ))
+
+comercio_exterior_ncm |> dplyr::glimpse()
+
 # Writing file
 
 nome_arquivo_csv <- "comercio_exterior_ncm"
@@ -133,3 +143,29 @@ caminho_arquivo <- paste0(getwd(),"/",nome_arquivo_csv, ".txt")
 
 readr::write_csv2(comercio_exterior_ncm,
                   caminho_arquivo)
+
+###################   wrinting in postgresql
+
+#estabelecendo conexao
+
+conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
+                                  dbname = "#############",
+                                  host = "##############",
+                                  port = "#############",
+                                  user = "#############",
+                                  password = "##########")
+
+RPostgres::dbListTables(conexao)
+
+schema_name <- "comexstat"
+
+table_name <- "comexstat_ncm_estado"
+
+DBI::dbSendQuery(conexao, paste0("CREATE SCHEMA IF NOT EXISTS ", schema_name))
+
+RPostgres::dbWriteTable(conexao,
+                          name = DBI::Id(schema = schema_name,table = table_name),
+                          value = comercio_exterior_ncm,
+                          row.names = FALSE, overwrite = TRUE)
+
+RPostgres::dbDisconnect(conexao)
