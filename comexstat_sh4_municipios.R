@@ -1,6 +1,6 @@
 # comexstat_sh4 comércio exterior por municípios #
 
-setwd("Z:/rstudio/comexstat/comexstat_sh4")
+setwd("X:/POWER BI/COMEXSTAT/municipios")
 
 # loop to download files
 
@@ -108,8 +108,8 @@ for(l in seq_along(lista_tradutor)){
       comercio_exterior_sh4[nomes_atraduzir[l]] |>
       dplyr::left_join(lista_tradutor[[l]], multiple = "first") |>
       dplyr::select(!contains(c("CO_SH4", "CO_PAIS", "SG_UF", "CO_MUN_GEO")))
-      },
-    error = function(err) { warning("file could not be join") })
+  },
+  error = function(err) { warning("file could not be join") })
 }
 
 # Unifying and selecting every decoded data into one file
@@ -122,6 +122,14 @@ compilado_traduzido <-
 comercio_exterior_sh4 <- comercio_exterior_sh4 |>
   dplyr::bind_cols(compilado_traduzido)
 
+# creating a column with positive and negative numbers
+
+comercio_exterior_sh4 <- comercio_exterior_sh4 |>
+  dplyr::mutate(VL_FOB_BIVALENTE = dplyr::case_when(
+    tipo_transacao == "Exportação" ~ VL_FOB * 1,
+    tipo_transacao == "Importação" ~ VL_FOB * -1
+  ))
+
 # Writing file
 
 nome_arquivo_csv <- "comercio_exterior_sh4"
@@ -130,3 +138,27 @@ caminho_arquivo <- paste0(getwd(),"/",nome_arquivo_csv, ".txt")
 
 readr::write_csv2(comercio_exterior_sh4,
                   caminho_arquivo)
+
+# writing PostgreSQL
+
+conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
+                                dbname = "###########",
+                                host = "############",
+                                port = "###########",
+                                user = "##########",
+                                password = "#############")
+
+RPostgres::dbListTables(conexao)
+
+schema_name <- "comexstat"
+
+table_name <- "comexstat_sh4_municipios"
+
+DBI::dbSendQuery(conexao, paste0("CREATE SCHEMA IF NOT EXISTS ", schema_name))
+
+RPostgres::dbWriteTable(conexao,
+                        name = DBI::Id(schema = schema_name,table = table_name),
+                        value = comercio_exterior_sh4,
+                        row.names = FALSE, overwrite = TRUE)
+
+RPostgres::dbDisconnect(conexao)
