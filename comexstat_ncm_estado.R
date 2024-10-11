@@ -1,7 +1,6 @@
 # comexstat_ncm
-# creating loop for download files
-setwd("D:/comexstat/estado")
 
+# creating loop for download files
 anos <- as.integer(lubridate::year(lubridate::today())-4):
   as.integer(lubridate::year(lubridate::today()))
 EXP <- vector(mode = 'list', length = length(anos))
