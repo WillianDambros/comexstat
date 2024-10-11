@@ -9,17 +9,35 @@ IMP <- vector(mode = 'list', length = length(anos))
 
 for(i in seq_along(anos)){
   
-  link_file_exp <-
-    paste0("https://balanca.economia.gov.br/balanca/bd/comexstat-bd/ncm/EXP_",
-           anos[i], ".csv")
+  # Tentativa com controle de erros para exportação
+  sucesso_exp <- FALSE
+  while(!sucesso_exp) {
+    tryCatch({
+      link_file_exp <- paste0("https://balanca.economia.gov.br/balanca/bd/",
+                              "comexstat-bd/ncm/EXP_", anos[i], ".csv")
+      EXP[[i]] <- readr::read_csv2(link_file_exp)
+      sucesso_exp <- TRUE  # Se sucesso, sai do loop
+    }, error = function(e) {
+      cat("Erro ao baixar o arquivo de exportação do ano", anos[i],
+          "- Tentando novamente...\n")
+      Sys.sleep(5)  # Aguarda 5 segundos antes de tentar novamente
+    })
+  }
   
-  EXP[[i]] <- readr::read_csv2(link_file_exp)
-  
-  link_file_imp <-
-    paste0("https://balanca.economia.gov.br/balanca/bd/comexstat-bd/ncm/IMP_",
-           anos[i], ".csv")
-  
-  IMP[[i]] <- readr::read_csv2(link_file_imp)
+  # Tentativa com controle de erros para importação
+  sucesso_imp <- FALSE
+  while(!sucesso_imp) {
+    tryCatch({
+      link_file_imp <- paste0("https://balanca.economia.gov.br/balanca/",
+                              "bd/comexstat-bd/ncm/IMP_", anos[i], ".csv")
+      IMP[[i]] <- readr::read_csv2(link_file_imp)
+      sucesso_imp <- TRUE  # Se sucesso, sai do loop
+    }, error = function(e) {
+      cat("Erro ao baixar o arquivo de importação do ano", anos[i],
+          "- Tentando novamente...\n")
+      Sys.sleep(5)  # Aguarda 5 segundos antes de tentar novamente
+    })
+  }
 }
 
 # unifying all data
@@ -55,7 +73,7 @@ curl::curl_download(link_decodificador,
 
 # preparing a decoder list
 
-nomes_atraduzir<- readxl::excel_sheets("decodificador_comexstat.xlsx")
+nomes_atraduzir <- readxl::excel_sheets("decodificador_comexstat.xlsx")
 
 lista_tradutor <- vector(mode = 'list',
                          length = length(nomes_atraduzir)-1)
@@ -125,6 +143,8 @@ nomes_comremocao <- c("competencia", "QT_ESTAT", "KG_LIQUIDO", "VL_FOB",
 comercio_exterior_ncm <- comercio_exterior_ncm |>
   dplyr::select(nomes_comremocao)
 
+nomes_semremocao
+
 # creating a column with positive and negative numbers
 
 comercio_exterior_ncm <- comercio_exterior_ncm |>
@@ -135,25 +155,62 @@ comercio_exterior_ncm <- comercio_exterior_ncm |>
 
 comercio_exterior_ncm |> dplyr::glimpse()
 
+# Using the particular produce decoder to adding more information
+
+compilado_decodificador_endereço <-
+  paste0("https://github.com/WillianDambros/data_source/raw/refs/",
+         "heads/main/compilado_decodificador.xlsx")
+
+decodificador_endereco <- paste0(getwd(), "/compilado_decodificador.xlsx")
+
+curl::curl_download(compilado_decodificador_endereço,
+                    decodificador_endereco)
+
+"compilado_decodificador.xlsx" |> readxl::excel_sheets()
+
+geo_estados <- 
+  readxl::read_excel("compilado_decodificador.xlsx",
+                     sheet =  "geo_estados",
+                     col_types = "text") |>
+  dplyr::select(-Região_estados)
+
+#setdiff(comercio_exterior_ncm$NO_UF, geo_estados$ESTADO)
+#setdiff(geo_estados$ESTADO, comercio_exterior_ncm$NO_UF)
+
+comercio_exterior_ncm <- comercio_exterior_ncm |>
+  dplyr::left_join(geo_estados,
+                   by = dplyr::join_by(NO_UF == ESTADO))
+
+geo_paises <- 
+  readxl::read_excel("compilado_decodificador.xlsx",
+                     sheet =  "geo_paises",
+                     col_types = "text")
+
+#setdiff(comercio_exterior_ncm$NO_PAIS, geo_paises$`País ou território`)
+#setdiff(geo_paises$`País ou território`, comercio_exterior_ncm$NO_PAIS)
+
+comercio_exterior_ncm <- comercio_exterior_ncm |>
+  dplyr::left_join(geo_paises,
+                   by = dplyr::join_by(NO_PAIS == `País ou território`))
+
 # Writing file
 
-nome_arquivo_csv <- "comercio_exterior_ncm"
+#nome_arquivo_csv <- "comercio_exterior_ncm"
 
-caminho_arquivo <- paste0(getwd(),"/",nome_arquivo_csv, ".txt")
+#caminho_arquivo <- paste0(getwd(),"/",nome_arquivo_csv, ".txt")
 
-readr::write_csv2(comercio_exterior_ncm,
-                  caminho_arquivo)
+#readr::write_csv2(comercio_exterior_ncm, caminho_arquivo)
 
 ###################   wrinting in postgresql
 
 #estabelecendo conexao
 
 conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
-                                  dbname = "#############",
-                                  host = "##############",
-                                  port = "#############",
-                                  user = "#############",
-                                  password = "##########")
+                                  dbname = "observatorio_db",
+                                  host = "10.43.88.8",
+                                  port = "5502",
+                                  user = "admin",
+                                  password = "adminadmin")
 
 RPostgres::dbListTables(conexao)
 
@@ -164,7 +221,8 @@ table_name <- "comexstat_ncm_estado"
 DBI::dbSendQuery(conexao, paste0("CREATE SCHEMA IF NOT EXISTS ", schema_name))
 
 RPostgres::dbWriteTable(conexao,
-                          name = DBI::Id(schema = schema_name,table = table_name),
+                          name = DBI::Id(schema = schema_name,
+                                         table = table_name),
                           value = comercio_exterior_ncm,
                           row.names = FALSE, overwrite = TRUE)
 
