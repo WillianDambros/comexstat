@@ -206,11 +206,11 @@ comercio_exterior_ncm <- comercio_exterior_ncm |>
 #estabelecendo conexao
 
 conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
-                                  dbname = "observatorio_db",
-                                  host = "10.43.88.8",
-                                  port = "5502",
-                                  user = "admin",
-                                  password = "adminadmin")
+                                  dbname = "#########",
+                                  host = "#########",
+                                  port = "##########",
+                                  user = "##########",
+                                  password = "############")
 
 RPostgres::dbListTables(conexao)
 
