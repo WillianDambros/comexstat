@@ -150,7 +150,7 @@ comercio_exterior_ncm <- comercio_exterior_ncm |>
   dplyr::mutate(VL_FOB_BIVALENTE = dplyr::case_when(
     tipo_transacao == "Exportação" ~ VL_FOB * 1,
     tipo_transacao == "Importação" ~ VL_FOB * -1
-    ))
+  ))
 
 comercio_exterior_ncm |> dplyr::glimpse()
 
@@ -169,8 +169,7 @@ curl::curl_download(compilado_decodificador_endereço,
 
 geo_estados <- 
   readxl::read_excel("compilado_decodificador.xlsx",
-                     sheet =  "geo_estados",
-                     col_types = "text") |>
+                     sheet =  "geo_estados") |>
   dplyr::select(-Região_estados)
 
 #setdiff(comercio_exterior_ncm$NO_UF, geo_estados$ESTADO)
@@ -182,8 +181,7 @@ comercio_exterior_ncm <- comercio_exterior_ncm |>
 
 geo_paises <- 
   readxl::read_excel("compilado_decodificador.xlsx",
-                     sheet =  "geo_paises",
-                     col_types = "text")
+                     sheet =  "geo_paises")
 
 #setdiff(comercio_exterior_ncm$NO_PAIS, geo_paises$`País ou território`)
 #setdiff(geo_paises$`País ou território`, comercio_exterior_ncm$NO_PAIS)
@@ -205,11 +203,11 @@ comercio_exterior_ncm <- comercio_exterior_ncm |>
 #estabelecendo conexao
 
 conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
-                                  dbname = "#########",
-                                  host = "#########",
-                                  port = "##########",
-                                  user = "##########",
-                                  password = "############")
+                                dbname = "##########",
+                                host = "##########",
+                                port = "#########",
+                                user = "##########",
+                                password = "###########")
 
 RPostgres::dbListTables(conexao)
 
@@ -220,9 +218,9 @@ table_name <- "comexstat_ncm_estado"
 DBI::dbSendQuery(conexao, paste0("CREATE SCHEMA IF NOT EXISTS ", schema_name))
 
 RPostgres::dbWriteTable(conexao,
-                          name = DBI::Id(schema = schema_name,
-                                         table = table_name),
-                          value = comercio_exterior_ncm,
-                          row.names = FALSE, overwrite = TRUE)
+                        name = DBI::Id(schema = schema_name,
+                                       table = table_name),
+                        value = comercio_exterior_ncm,
+                        row.names = FALSE, overwrite = TRUE)
 
 RPostgres::dbDisconnect(conexao)
