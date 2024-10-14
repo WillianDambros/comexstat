@@ -1,7 +1,5 @@
 # comexstat_sh4 comércio exterior por municípios #
 
-setwd("X:/POWER BI/COMEXSTAT/municipios")
-
 # loop to download files
 
 anos <- as.integer(lubridate::year(lubridate::today())-4):
@@ -11,27 +9,48 @@ IMP <- vector(mode = 'list', length = length(anos))
 
 for(i in seq_along(anos)){
   
-  link_file_exp <-
-    paste0("https://balanca.economia.gov.br/balanca/bd/comexstat-bd/mun/EXP_",
-           anos[i],"_MUN", ".csv")
   
-  EXP[[i]] <- readr::read_csv2(link_file_exp,
-                               col_types = readr::cols(
-                                 "KG_LIQUIDO" = readr::col_double(),
-                                 "VL_FOB" = readr::col_double(),
-                                 .default = readr::col_character()
-                               ))
+  # tentativa com controle de erros exportação
+  sucesso_exp <- FALSE
+  while(!sucesso_exp) {
+    tryCatch({
+      link_file_exp <- paste0("https://balanca.economia.gov.br/balanca/bd/",
+                              "comexstat-bd/mun/EXP_",anos[i],"_MUN", ".csv")
+      EXP[[i]] <- readr::read_csv2(link_file_exp,
+                                   col_types = readr::cols(
+                                     "KG_LIQUIDO" = readr::col_double(),
+                                     "VL_FOB" = readr::col_double(),
+                                     .default = readr::col_character()
+                                     ))
+      sucesso_exp <- TRUE # Se sucesso, sai do loop
+    }, error = function(e) {
+      cat("Erro ao baixar o arquivo exportação do ano", anos[i],
+          "- Tentando novamente...\n")
+      Sys.sleep(5) # Aguarda 5 segundos antes de tentar novamente
+    })
+  }
   
-  link_file_imp <-
-    paste0("https://balanca.economia.gov.br/balanca/bd/comexstat-bd/mun/IMP_",
-           anos[i], "_MUN", ".csv")
-  
-  IMP[[i]] <- readr::read_csv2(link_file_imp,
-                               col_types = readr::cols(
-                                 "KG_LIQUIDO" = readr::col_double(),
-                                 "VL_FOB" = readr::col_double(),
-                                 .default = readr::col_character()
-                               ))
+  # tentativa com controle de erros para importação
+  sucesso_imp <- FALSE
+  while (!sucesso_imp) {
+    tryCatch({
+      link_file_imp <- 
+        paste0("https://balanca.economia.gov.br/balanca/",
+               "bd/comexstat-bd/mun/IMP_", anos[i], "_MUN", ".csv")
+      
+      IMP[[i]] <- readr::read_csv2(link_file_imp,
+                                   col_types = readr::cols(
+                                     "KG_LIQUIDO" = readr::col_double(),
+                                     "VL_FOB" = readr::col_double(),
+                                     .default = readr::col_character()
+                                   ))
+      sucesso_imp <- TRUE # Se sucesso, sai do loop
+    }, error = function(e) {
+      cat("Erro ao baixar o arquivo de importação do ano", anos[i],
+          "- Tentando novamente...\n")
+      Sys.sleep(5) # Aguarda 5 segundos antes de tentar novamente
+    })
+  }
 }
 
 # unifying data
@@ -130,22 +149,66 @@ comercio_exterior_sh4 <- comercio_exterior_sh4 |>
     tipo_transacao == "Importação" ~ VL_FOB * -1
   ))
 
+comercio_exterior_sh4 |> dplyr::glimpse()
+
+
+compilado_decodificador_endereço <-
+  paste0("https://github.com/WillianDambros/data_source/raw/refs/",
+         "heads/main/compilado_decodificador.xlsx")
+
+decodificador_endereco <- paste0(getwd(), "/compilado_decodificador.xlsx")
+
+curl::curl_download(compilado_decodificador_endereço,
+                    decodificador_endereco)
+
+"compilado_decodificador.xlsx" |> readxl::excel_sheets()
+
+# compilado códigos de Latitude e Longitude para munícipios de MT
+
+
+territorialidade_municipios_mt <-
+  readxl::read_excel(decodificador_endereco,
+                     sheet = "territorialidade_municipios_mt") |> 
+  dplyr::select(territorio_municipio_codigo_7d,
+                territorio_latitude,
+                territorio_longitude,
+                rpseplan10340_munícipio_polo_decodificado,
+                rpseplan10340_regiao_decodificado)
+
+territorialidade_municipios_mt |>dplyr::glimpse()
+
+comercio_exterior_sh4 <- comercio_exterior_sh4 |>
+  dplyr::left_join(territorialidade_municipios_mt,
+                   by = dplyr::join_by(CO_MUN_GEO ==
+                                         territorio_municipio_codigo_7d))
+
+
+geo_paises <- 
+  readxl::read_excel("compilado_decodificador.xlsx",
+                     sheet =  "geo_paises")
+
+# buscar como contemplar todos paises, fonte oficial
+
+comercio_exterior_sh4 <- comercio_exterior_sh4 |>
+  dplyr::left_join(geo_paises, 
+                   by = dplyr::join_by(NO_PAIS == `País ou território`))
+
 # Writing file
 
-nome_arquivo_csv <- "comercio_exterior_sh4"
+#nome_arquivo_csv <- "comercio_exterior_sh4"
 
-caminho_arquivo <- paste0(getwd(),"/",nome_arquivo_csv, ".txt")
+#caminho_arquivo <- paste0(getwd(),"/",nome_arquivo_csv, ".txt")
 
-readr::write_csv2(comercio_exterior_sh4,
-                  caminho_arquivo)
+#readr::write_csv2(comercio_exterior_sh4,
+#                  caminho_arquivo)
 
 # writing PostgreSQL
 
 conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
                                 dbname = "###########",
-                                host = "############",
+                                host = "###########",
                                 port = "###########",
-                                user = "##########",
+                                user = "###########",
                                 password = "#############")
 
 RPostgres::dbListTables(conexao)
