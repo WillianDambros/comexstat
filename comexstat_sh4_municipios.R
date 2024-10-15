@@ -164,19 +164,22 @@ curl::curl_download(compilado_decodificador_endereço,
 "compilado_decodificador.xlsx" |> readxl::excel_sheets()
 
 # compilado códigos de Latitude e Longitude para munícipios de MT
-
-
-territorialidade_municipios_mt <-
+                
+territorialidade_municipios_mt <- 
   readxl::read_excel(decodificador_endereco,
-                     sheet = "territorialidade_municipios_mt") |> 
+                     sheet = "territorialidade_municipios_mt") |>
   dplyr::select(territorio_municipio_codigo_7d,
                 territorio_latitude,
                 territorio_longitude,
                 rpseplan10340_munícipio_polo_decodificado,
-                rpseplan10340_regiao_decodificado) |>
+                rpseplan10340_regiao_decodificado) |> 
   dplyr::mutate(
-    territorio_latitude = as.numeric(territorio_latitude),
-    territorio_longitude = as.numeric(territorio_longitude)
+    territorio_latitude = readr::parse_number(territorio_latitude,
+                                              locale = readr::locale(
+                                                decimal_mark = ",")),
+    territorio_longitude = readr::parse_number(territorio_longitude,
+                                               locale = readr::locale(
+                                                 decimal_mark = ","))
   )
 
 territorialidade_municipios_mt |>dplyr::glimpse()
@@ -209,11 +212,11 @@ comercio_exterior_sh4 <- comercio_exterior_sh4 |>
 # writing PostgreSQL
 
 conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
-                                dbname = "###########",
-                                host = "#############",
-                                port = "#############",
-                                user = "##############",
-                                password = "#############")
+                                dbname = "#########",
+                                host = "#########",
+                                port = "##########",
+                                user = "###########",
+                                password = "##########")
 
 RPostgres::dbListTables(conexao)
 
