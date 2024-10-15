@@ -173,7 +173,11 @@ territorialidade_municipios_mt <-
                 territorio_latitude,
                 territorio_longitude,
                 rpseplan10340_munícipio_polo_decodificado,
-                rpseplan10340_regiao_decodificado)
+                rpseplan10340_regiao_decodificado) |>
+  dplyr::mutate(
+    territorio_latitude = as.numeric(territorio_latitude),
+    territorio_longitude = as.numeric(territorio_longitude)
+  )
 
 territorialidade_municipios_mt |>dplyr::glimpse()
 
@@ -206,9 +210,9 @@ comercio_exterior_sh4 <- comercio_exterior_sh4 |>
 
 conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
                                 dbname = "###########",
-                                host = "###########",
-                                port = "###########",
-                                user = "###########",
+                                host = "#############",
+                                port = "#############",
+                                user = "##############",
                                 password = "#############")
 
 RPostgres::dbListTables(conexao)
