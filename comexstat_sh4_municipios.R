@@ -149,9 +149,6 @@ comercio_exterior_sh4 <- comercio_exterior_sh4 |>
     tipo_transacao == "Importação" ~ VL_FOB * -1
   ))
 
-comercio_exterior_sh4 |> dplyr::glimpse()
-
-
 compilado_decodificador_endereço <-
   paste0("https://github.com/WillianDambros/data_source/raw/refs/",
          "heads/main/compilado_decodificador.xlsx")
@@ -172,7 +169,10 @@ territorialidade_municipios_mt <-
                 territorio_latitude,
                 territorio_longitude,
                 rpseplan10340_munícipio_polo_decodificado,
-                rpseplan10340_regiao_decodificado) |> 
+                rpseplan10340_regiao_decodificado,
+                imeia_municipios_polo_economico,
+                imeia_regiao,
+                territorio_meso_decodificado) |> 
   dplyr::mutate(
     territorio_latitude = readr::parse_number(territorio_latitude,
                                               locale = readr::locale(
@@ -181,8 +181,6 @@ territorialidade_municipios_mt <-
                                                locale = readr::locale(
                                                  decimal_mark = ","))
   )
-
-territorialidade_municipios_mt |>dplyr::glimpse()
 
 comercio_exterior_sh4 <- comercio_exterior_sh4 |>
   dplyr::left_join(territorialidade_municipios_mt,
@@ -212,11 +210,11 @@ comercio_exterior_sh4 <- comercio_exterior_sh4 |>
 # writing PostgreSQL
 
 conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
-                                dbname = "#########",
-                                host = "#########",
-                                port = "##########",
-                                user = "###########",
-                                password = "##########")
+                                dbname = "###########",
+                                host = "############",
+                                port = "###########",
+                                user = "##########",
+                                password = "###########")
 
 RPostgres::dbListTables(conexao)
 
