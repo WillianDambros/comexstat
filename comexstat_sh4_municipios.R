@@ -200,21 +200,15 @@ comercio_exterior_sh4 <- comercio_exterior_sh4 |>
 
 # Writing file
 
-#nome_arquivo_csv <- "comercio_exterior_sh4"
+#nome_arquivo_csv <- "comexstat_municipios_sh4"
 
-#caminho_arquivo <- paste0(getwd(),"/",nome_arquivo_csv, ".txt")
+#caminho_arquivo <- paste0("D:/comexstat_temporario","/",nome_arquivo_csv, ".txt")
 
-#readr::write_csv2(comercio_exterior_sh4,
-#                  caminho_arquivo)
+#readr::write_csv2(comercio_exterior_sh4, caminho_arquivo)
 
 # writing PostgreSQL
 
-conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
-                                dbname = "###########",
-                                host = "############",
-                                port = "###########",
-                                user = "##########",
-                                password = "###########")
+source("X:/POWER BI/NOVOCAGED/conexao.R")
 
 RPostgres::dbListTables(conexao)
 
