@@ -1,7 +1,7 @@
 # comexstat_ncm
 
 # creating loop for download files
-anos <- as.integer(lubridate::year(lubridate::today())-4):
+anos <- as.integer(lubridate::year(lubridate::today())-5):
   as.integer(lubridate::year(lubridate::today()))
 EXP <- vector(mode = 'list', length = length(anos))
 IMP <- vector(mode = 'list', length = length(anos))
@@ -52,6 +52,8 @@ IMP <-
   dplyr::mutate(tipo_transacao = "Importação")
 
 comercio_exterior_ncm <- EXP |> dplyr::bind_rows(IMP)
+
+#comercio_exterior_ncm <- comercio_exterior_ncm |> dplyr::select(!"<!DOCTYPE html>")
 
 # transform column date
 
@@ -119,7 +121,7 @@ for(l in seq_along(lista_tradutor)){
 
 # Unifying and selecting every decoded data into one file
 
-compilado_traduzido[[13]] <- NULL
+#compilado_traduzido[[13]] <- NULL #não sei pq era necessario
 
 compilado_traduzido <-
   compilado_traduzido |> purrr::list_cbind()
@@ -141,8 +143,6 @@ nomes_comremocao <- c("competencia", "QT_ESTAT", "KG_LIQUIDO", "VL_FOB",
 
 comercio_exterior_ncm <- comercio_exterior_ncm |>
   dplyr::select(nomes_comremocao)
-
-nomes_semremocao
 
 # creating a column with positive and negative numbers
 
@@ -192,28 +192,23 @@ comercio_exterior_ncm <- comercio_exterior_ncm |>
 
 # Writing file
 
-#nome_arquivo_csv <- "comercio_exterior_ncm"
+#nome_arquivo_csv <- "comexstat_estado_ncm"
 
-#caminho_arquivo <- paste0(getwd(),"/",nome_arquivo_csv, ".txt")
+#caminho_arquivo <- paste0("D:/comexstat_temporario","/",nome_arquivo_csv, ".txt")
 
 #readr::write_csv2(comercio_exterior_ncm, caminho_arquivo)
 
 ###################   wrinting in postgresql
-
+comercio_exterior_ncm |> dplyr::glimpse()
 #estabelecendo conexao
 
-conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
-                                dbname = "##########",
-                                host = "##########",
-                                port = "#########",
-                                user = "##########",
-                                password = "###########")
+source("X:/POWER BI/NOVOCAGED/conexao.R")
 
 RPostgres::dbListTables(conexao)
 
 schema_name <- "comexstat"
 
-table_name <- "comexstat_ncm_estado"
+table_name <- "comexstat_ncm_estado_teste"
 
 DBI::dbSendQuery(conexao, paste0("CREATE SCHEMA IF NOT EXISTS ", schema_name))
 
