@@ -200,6 +200,8 @@ comercio_exterior_ncm <- comercio_exterior_ncm |>
 
 ###################   wrinting in postgresql
 comercio_exterior_ncm |> dplyr::glimpse()
+
+comercio_exterior_ncm$competencia |> unique()
 #estabelecendo conexao
 
 source("X:/POWER BI/NOVOCAGED/conexao.R")
@@ -208,7 +210,7 @@ RPostgres::dbListTables(conexao)
 
 schema_name <- "comexstat"
 
-table_name <- "comexstat_ncm_estado_teste"
+table_name <- "comexstat_ncm_estado"
 
 DBI::dbSendQuery(conexao, paste0("CREATE SCHEMA IF NOT EXISTS ", schema_name))
 
