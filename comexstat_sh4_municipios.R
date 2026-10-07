@@ -7,6 +7,14 @@ anos <- as.integer(lubridate::year(lubridate::today())-4):
 EXP <- vector(mode = 'list', length = length(anos))
 IMP <- vector(mode = 'list', length = length(anos))
 
+
+
+# https://balanca.mdic.gov.br/balanca/bd/comexstat-bd/mun/EXP_2022_MUN.csv
+
+# https://balanca.mdic.gov.br/balanca/bd/comexstat-bd/mun/IMP_2022_MUN.csv
+
+
+
 for(i in seq_along(anos)){
   
   
@@ -14,8 +22,9 @@ for(i in seq_along(anos)){
   sucesso_exp <- FALSE
   while(!sucesso_exp) {
     tryCatch({
-      link_file_exp <- paste0("https://balanca.economia.gov.br/balanca/bd/",
-                              "comexstat-bd/mun/EXP_",anos[i],"_MUN", ".csv")
+      link_file_exp <- 
+        paste0("https://balanca.mdic.gov.br/balanca/bd/comexstat-bd/",
+                              "mun/EXP_",anos[i],"_MUN", ".csv")
       EXP[[i]] <- readr::read_csv2(link_file_exp,
                                    col_types = readr::cols(
                                      "KG_LIQUIDO" = readr::col_double(),
@@ -35,8 +44,8 @@ for(i in seq_along(anos)){
   while (!sucesso_imp) {
     tryCatch({
       link_file_imp <- 
-        paste0("https://balanca.economia.gov.br/balanca/",
-               "bd/comexstat-bd/mun/IMP_", anos[i], "_MUN", ".csv")
+        paste0("https://balanca.mdic.gov.br/balanca/bd/comexstat-bd/",
+               "mun/IMP_", anos[i], "_MUN", ".csv")
       
       IMP[[i]] <- readr::read_csv2(link_file_imp,
                                    col_types = readr::cols(
@@ -76,8 +85,10 @@ comercio_exterior_sh4 <-
 
 # downloading and applying decoder 
 
+# https://balanca.mdic.gov.br/balanca/bd/tabelas/TABELAS_AUXILIARES.xlsx
+
 link_decodificador <-
-  "https://balanca.economia.gov.br/balanca/bd/tabelas/TABELAS_AUXILIARES.xlsx"
+  "https://balanca.mdic.gov.br/balanca/bd/tabelas/TABELAS_AUXILIARES.xlsx"
 
 curl::curl_download(link_decodificador,
                     paste0(getwd(), "/decodificador_comexstat.xlsx"))
