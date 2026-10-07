@@ -1,10 +1,15 @@
 # comexstat_ncm
 
 # creating loop for download files
-anos <- as.integer(lubridate::year(lubridate::today())-5):
+anos <- as.integer(lubridate::year(lubridate::today())-4):
   as.integer(lubridate::year(lubridate::today()))
 EXP <- vector(mode = 'list', length = length(anos))
 IMP <- vector(mode = 'list', length = length(anos))
+
+
+# https://balanca.mdic.gov.br/balanca/bd/comexstat-bd/ncm/EXP_2022.csv
+
+# https://balanca.mdic.gov.br/balanca/bd/comexstat-bd/ncm/IMP_2022.csv
 
 for(i in seq_along(anos)){
   
@@ -12,8 +17,9 @@ for(i in seq_along(anos)){
   sucesso_exp <- FALSE
   while(!sucesso_exp) {
     tryCatch({
-      link_file_exp <- paste0("https://balanca.economia.gov.br/balanca/bd/",
+      link_file_exp <- paste0("https://balanca.mdic.gov.br/balanca/bd/",
                               "comexstat-bd/ncm/EXP_", anos[i], ".csv")
+      print(link_file_exp)
       EXP[[i]] <- readr::read_csv2(link_file_exp)
       sucesso_exp <- TRUE  # Se sucesso, sai do loop
     }, error = function(e) {
@@ -27,8 +33,8 @@ for(i in seq_along(anos)){
   sucesso_imp <- FALSE
   while(!sucesso_imp) {
     tryCatch({
-      link_file_imp <- paste0("https://balanca.economia.gov.br/balanca/",
-                              "bd/comexstat-bd/ncm/IMP_", anos[i], ".csv")
+      link_file_imp <- paste0("https://balanca.mdic.gov.br/balanca/bd/",
+                              "comexstat-bd/ncm/IMP_", anos[i], ".csv")
       IMP[[i]] <- readr::read_csv2(link_file_imp)
       sucesso_imp <- TRUE  # Se sucesso, sai do loop
     }, error = function(e) {
@@ -66,8 +72,10 @@ comercio_exterior_ncm <-
 
 # downloading and applying decoder 
 
+# https://balanca.mdic.gov.br/balanca/bd/tabelas/TABELAS_AUXILIARES.xlsx
+
 link_decodificador <-
-  "https://balanca.economia.gov.br/balanca/bd/tabelas/TABELAS_AUXILIARES.xlsx"
+  "https://balanca.mdic.gov.br/balanca/bd/tabelas/TABELAS_AUXILIARES.xlsx"
 
 curl::curl_download(link_decodificador,
                     paste0(getwd(), "/decodificador_comexstat.xlsx"))
@@ -131,6 +139,7 @@ compilado_traduzido <-
 comercio_exterior_ncm <- comercio_exterior_ncm |>
   dplyr::bind_cols(compilado_traduzido)
 
+comercio_exterior_ncm |> dplyr::glimpse()
 # selecting variables
 
 nomes_semremocao <- comercio_exterior_ncm |> names()
